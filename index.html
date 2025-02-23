@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Snippet Manager</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -22,6 +25,9 @@
             <input type="text" id="searchInput" placeholder="Search snippets...">
             <select id="languageFilter">
                 <option value="">All Languages</option>
+            </select>
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
             </select>
         </div>
 
@@ -62,6 +68,20 @@
                         <option value="bash">Bash</option>
                         <option value="other">Other</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="snippetCategory">Category:</label>
+                    <select id="snippetCategory">
+                        <option value="">No Category</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="components">Components</option>
+                        <option value="api">API</option>
+                        <option value="algorithms">Algorithms</option>
+                        <option value="snippets">Snippets</option>
+                        <option value="templates">Templates</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="customCategory" placeholder="Or type custom category..." style="margin-top: 8px;">
                 </div>
                 <div class="form-group">
                     <label for="snippetTags">Tags (comma-separated):</label>
