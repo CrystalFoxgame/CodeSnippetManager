@@ -65,6 +65,18 @@ h1 {
     background: #2f3542;
 }
 
+.code-editor-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.btn.mini {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: auto;
+}
+
 .search-bar {
     display: flex;
     gap: 15px;

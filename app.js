@@ -41,6 +41,15 @@ class SnippetManager {
                 this.closeModal();
             }
         });
+
+        // Code formatting buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'formatCodeBtn') {
+                this.formatCode();
+            } else if (e.target.id === 'minifyCodeBtn') {
+                this.minifyCode();
+            }
+        });
     }
 
     setupKeyboardShortcuts() {
@@ -406,6 +415,93 @@ class SnippetManager {
         `;
         document.body.appendChild(toast);
         setTimeout(() => document.body.removeChild(toast), 2000);
+    }
+
+    formatCode() {
+        const codeTextarea = document.getElementById('snippetCode');
+        const language = document.getElementById('snippetLanguage').value;
+        let code = codeTextarea.value;
+
+        try {
+            if (language === 'javascript' || language === 'js') {
+                // Basic JS formatting
+                code = this.formatJavaScript(code);
+            } else if (language === 'json') {
+                // Format JSON
+                code = JSON.stringify(JSON.parse(code), null, 2);
+            } else if (language === 'css') {
+                // Basic CSS formatting
+                code = this.formatCSS(code);
+            } else {
+                // Generic formatting (add proper indentation)
+                code = this.formatGeneric(code);
+            }
+            
+            codeTextarea.value = code;
+            this.showToast('Code formatted successfully!');
+        } catch (error) {
+            this.showToast('Could not format code: ' + error.message);
+        }
+    }
+
+    minifyCode() {
+        const codeTextarea = document.getElementById('snippetCode');
+        const language = document.getElementById('snippetLanguage').value;
+        let code = codeTextarea.value;
+
+        try {
+            if (language === 'javascript' || language === 'js') {
+                // Basic minification
+                code = code.replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
+                           .replace(/\/\/.*$/gm, '') // Remove single line comments
+                           .replace(/\s+/g, ' ') // Replace multiple spaces
+                           .trim();
+            } else if (language === 'css') {
+                // Basic CSS minification
+                code = code.replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
+                           .replace(/\s+/g, ' ')
+                           .replace(/; /g, ';')
+                           .replace(/ {/g, '{')
+                           .replace(/} /g, '}')
+                           .trim();
+            } else if (language === 'json') {
+                // Minify JSON
+                code = JSON.stringify(JSON.parse(code));
+            }
+            
+            codeTextarea.value = code;
+            this.showToast('Code minified successfully!');
+        } catch (error) {
+            this.showToast('Could not minify code: ' + error.message);
+        }
+    }
+
+    formatJavaScript(code) {
+        return code.replace(/;/g, ';\n')
+                   .replace(/{/g, ' {\n')
+                   .replace(/}/g, '\n}')
+                   .replace(/,/g, ',\n')
+                   .split('\n')
+                   .map(line => line.trim())
+                   .filter(line => line.length > 0)
+                   .join('\n');
+    }
+
+    formatCSS(code) {
+        return code.replace(/{/g, ' {\n')
+                   .replace(/}/g, '\n}\n')
+                   .replace(/;/g, ';\n')
+                   .split('\n')
+                   .map(line => line.trim())
+                   .filter(line => line.length > 0)
+                   .join('\n');
+    }
+
+    formatGeneric(code) {
+        // Simple generic formatting - fix basic indentation
+        return code.split('\n')
+                   .map(line => line.trim())
+                   .join('\n');
     }
 
     renderSnippets(filteredSnippets = null) {
