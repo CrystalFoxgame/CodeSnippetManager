@@ -257,6 +257,11 @@ h1 {
     color: white;
 }
 
+.export-btn {
+    background: #f39c12;
+    color: white;
+}
+
 .empty-state {
     grid-column: 1 / -1;
     text-align: center;

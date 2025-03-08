@@ -400,6 +400,53 @@ class SnippetManager {
         });
     }
 
+    exportSingleSnippet(id) {
+        const snippet = this.snippets.find(s => s.id === id);
+        if (!snippet) return;
+
+        const fileExtensions = {
+            javascript: 'js',
+            python: 'py',
+            html: 'html',
+            css: 'css',
+            java: 'java',
+            cpp: 'cpp',
+            c: 'c',
+            php: 'php',
+            go: 'go',
+            rust: 'rs',
+            sql: 'sql',
+            bash: 'sh',
+            json: 'json',
+            typescript: 'ts'
+        };
+
+        const extension = fileExtensions[snippet.language] || 'txt';
+        const filename = `${snippet.title.replace(/[^a-zA-Z0-9]/g, '_')}.${extension}`;
+        
+        const content = `/*
+ * ${snippet.title}
+ * ${snippet.description || 'No description'}
+ * Language: ${snippet.language}
+ * Tags: ${snippet.tags.join(', ')}
+ * Created: ${new Date(snippet.createdAt).toLocaleDateString()}
+ */
+
+${snippet.code}`;
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast('Snippet exported as ' + filename);
+    }
+
     showToast(message) {
         const toast = document.createElement('div');
         toast.textContent = message;
@@ -536,6 +583,7 @@ class SnippetManager {
                 ` : ''}
                 <div class="snippet-actions">
                     <button class="snippet-btn copy-btn" onclick="app.copyToClipboard(\`${this.escapeJs(snippet.code)}\`)">Copy</button>
+                    <button class="snippet-btn export-btn" onclick="app.exportSingleSnippet(${snippet.id})">Export</button>
                     <button class="snippet-btn edit-btn" onclick="app.openModal(${JSON.stringify(snippet).replace(/"/g, '&quot;')})">Edit</button>
                     <button class="snippet-btn delete-btn" onclick="app.deleteSnippet(${snippet.id})">Delete</button>
                 </div>
