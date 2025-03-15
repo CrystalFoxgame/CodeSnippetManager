@@ -10,6 +10,7 @@ class SnippetManager {
         this.updateLanguageFilter();
         this.updateCategoryFilter();
         this.updateTagsList();
+        this.loadSavedSearches();
     }
 
     initializeElements() {
@@ -20,6 +21,7 @@ class SnippetManager {
         this.languageFilter = document.getElementById('languageFilter');
         this.categoryFilter = document.getElementById('categoryFilter');
         this.tagsList = document.getElementById('tagsList');
+        this.savedSearches = document.getElementById('savedSearches');
     }
 
     attachEventListeners() {
@@ -35,6 +37,10 @@ class SnippetManager {
         this.searchInput.addEventListener('input', () => this.filterSnippets());
         this.languageFilter.addEventListener('change', () => this.filterSnippets());
         this.categoryFilter.addEventListener('change', () => this.filterSnippets());
+        this.savedSearches.addEventListener('change', () => this.loadSavedSearch());
+        
+        document.getElementById('saveSearchBtn').addEventListener('click', () => this.saveCurrentSearch());
+        document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearAllFilters());
         
         window.addEventListener('click', (e) => {
             if (e.target === this.modal) {
@@ -646,6 +652,89 @@ ${snippet.code}`;
         this.tagsList.innerHTML = allTags.map(tag => 
             `<span class="tag" onclick="app.toggleTag(this)">${this.escapeHtml(tag)}</span>`
         ).join('');
+    }
+
+    saveCurrentSearch() {
+        const searchTerm = this.searchInput.value.trim();
+        const language = this.languageFilter.value;
+        const category = this.categoryFilter.value;
+        const activeTag = document.querySelector('.tag.active')?.textContent;
+
+        if (!searchTerm && !language && !category && !activeTag) {
+            this.showToast('No search criteria to save');
+            return;
+        }
+
+        const searchName = prompt('Enter a name for this search:');
+        if (!searchName) return;
+
+        const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+        const search = {
+            id: Date.now(),
+            name: searchName,
+            searchTerm,
+            language,
+            category,
+            activeTag,
+            created: new Date().toISOString()
+        };
+
+        savedSearches.push(search);
+        localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
+        
+        this.loadSavedSearches();
+        this.showToast('Search saved successfully!');
+    }
+
+    loadSavedSearches() {
+        const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+        
+        if (savedSearches.length > 0) {
+            this.savedSearches.style.display = 'block';
+            this.savedSearches.innerHTML = '<option value="">Saved Searches</option>' +
+                savedSearches.map(search => 
+                    `<option value="${search.id}">${this.escapeHtml(search.name)}</option>`
+                ).join('');
+        } else {
+            this.savedSearches.style.display = 'none';
+        }
+    }
+
+    loadSavedSearch() {
+        const searchId = this.savedSearches.value;
+        if (!searchId) return;
+
+        const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
+        const search = savedSearches.find(s => s.id == searchId);
+        
+        if (search) {
+            this.searchInput.value = search.searchTerm || '';
+            this.languageFilter.value = search.language || '';
+            this.categoryFilter.value = search.category || '';
+            
+            // Clear existing active tags
+            document.querySelectorAll('.tag.active').forEach(tag => tag.classList.remove('active'));
+            
+            // Set active tag if exists
+            if (search.activeTag) {
+                const tagElement = [...document.querySelectorAll('.tag')]
+                    .find(tag => tag.textContent === search.activeTag);
+                if (tagElement) {
+                    tagElement.classList.add('active');
+                }
+            }
+            
+            this.filterSnippets();
+        }
+    }
+
+    clearAllFilters() {
+        this.searchInput.value = '';
+        this.languageFilter.value = '';
+        this.categoryFilter.value = '';
+        this.savedSearches.value = '';
+        document.querySelectorAll('.tag.active').forEach(tag => tag.classList.remove('active'));
+        this.filterSnippets();
     }
 
     toggleTag(tagElement) {

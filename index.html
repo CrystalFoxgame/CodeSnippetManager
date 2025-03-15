@@ -22,12 +22,19 @@
         </header>
 
         <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="Search snippets...">
+            <div class="search-input-group">
+                <input type="text" id="searchInput" placeholder="Search snippets...">
+                <button id="saveSearchBtn" class="btn mini" title="Save current search">💾</button>
+                <button id="clearSearchBtn" class="btn mini" title="Clear search">✕</button>
+            </div>
             <select id="languageFilter">
                 <option value="">All Languages</option>
             </select>
             <select id="categoryFilter">
                 <option value="">All Categories</option>
+            </select>
+            <select id="savedSearches" style="display: none;">
+                <option value="">Saved Searches</option>
             </select>
         </div>
 
