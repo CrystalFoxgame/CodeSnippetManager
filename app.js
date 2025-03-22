@@ -20,6 +20,8 @@ class SnippetManager {
         this.searchInput = document.getElementById('searchInput');
         this.languageFilter = document.getElementById('languageFilter');
         this.categoryFilter = document.getElementById('categoryFilter');
+        this.favoriteFilter = document.getElementById('favoriteFilter');
+        this.sortFilter = document.getElementById('sortFilter');
         this.tagsList = document.getElementById('tagsList');
         this.savedSearches = document.getElementById('savedSearches');
     }
@@ -37,6 +39,8 @@ class SnippetManager {
         this.searchInput.addEventListener('input', () => this.filterSnippets());
         this.languageFilter.addEventListener('change', () => this.filterSnippets());
         this.categoryFilter.addEventListener('change', () => this.filterSnippets());
+        this.favoriteFilter.addEventListener('change', () => this.filterSnippets());
+        this.sortFilter.addEventListener('change', () => this.filterSnippets());
         this.savedSearches.addEventListener('change', () => this.loadSavedSearch());
         
         document.getElementById('saveSearchBtn').addEventListener('click', () => this.saveCurrentSearch());
@@ -366,6 +370,9 @@ class SnippetManager {
             tags,
             description,
             code,
+            favorite: this.currentEditId ? 
+                this.snippets.find(s => s.id === this.currentEditId).favorite || false : 
+                false,
             createdAt: this.currentEditId ? 
                 this.snippets.find(s => s.id === this.currentEditId).createdAt : 
                 new Date().toISOString(),
@@ -579,6 +586,9 @@ ${snippet.code}`;
                             ${snippet.category ? `<span class="snippet-category">${this.escapeHtml(snippet.category)}</span>` : ''}
                         </div>
                     </div>
+                    <button class="favorite-btn ${snippet.favorite ? 'active' : ''}" onclick="app.toggleFavorite(${snippet.id})" title="${snippet.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+                        ${snippet.favorite ? '⭐' : '☆'}
+                    </button>
                 </div>
                 ${snippet.description ? `<div class="snippet-description">${this.escapeHtml(snippet.description)}</div>` : ''}
                 <div class="snippet-code"><pre><code class="language-${snippet.language}">${this.escapeHtml(snippet.code)}</code></pre></div>
@@ -606,9 +616,10 @@ ${snippet.code}`;
         const searchTerm = this.searchInput.value.toLowerCase();
         const selectedLanguage = this.languageFilter.value;
         const selectedCategory = this.categoryFilter.value;
+        const selectedFavorite = this.favoriteFilter.value;
         const activeTag = document.querySelector('.tag.active')?.textContent;
 
-        const filtered = this.snippets.filter(snippet => {
+        let filtered = this.snippets.filter(snippet => {
             const matchesSearch = !searchTerm || 
                 snippet.title.toLowerCase().includes(searchTerm) ||
                 snippet.description.toLowerCase().includes(searchTerm) ||
@@ -618,10 +629,17 @@ ${snippet.code}`;
 
             const matchesLanguage = !selectedLanguage || snippet.language === selectedLanguage;
             const matchesCategory = !selectedCategory || snippet.category === selectedCategory;
+            const matchesFavorite = !selectedFavorite || 
+                (selectedFavorite === 'favorites' && snippet.favorite) ||
+                (selectedFavorite === 'non-favorites' && !snippet.favorite);
             const matchesTag = !activeTag || snippet.tags.includes(activeTag);
 
-            return matchesSearch && matchesLanguage && matchesCategory && matchesTag;
+            return matchesSearch && matchesLanguage && matchesCategory && matchesFavorite && matchesTag;
         });
+
+        // Apply sorting
+        const sortBy = this.sortFilter.value;
+        filtered = this.sortSnippets(filtered, sortBy);
 
         this.renderSnippets(filtered);
     }
@@ -728,13 +746,50 @@ ${snippet.code}`;
         }
     }
 
+    sortSnippets(snippets, sortBy) {
+        return snippets.sort((a, b) => {
+            switch (sortBy) {
+                case 'newest':
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                case 'oldest':
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                case 'title':
+                    return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+                case 'title-desc':
+                    return b.title.toLowerCase().localeCompare(a.title.toLowerCase());
+                case 'language':
+                    return a.language.localeCompare(b.language);
+                case 'favorites':
+                    if (a.favorite && !b.favorite) return -1;
+                    if (!a.favorite && b.favorite) return 1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                default:
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+            }
+        });
+    }
+
     clearAllFilters() {
         this.searchInput.value = '';
         this.languageFilter.value = '';
         this.categoryFilter.value = '';
+        this.favoriteFilter.value = '';
+        this.sortFilter.value = 'newest';
         this.savedSearches.value = '';
         document.querySelectorAll('.tag.active').forEach(tag => tag.classList.remove('active'));
         this.filterSnippets();
+    }
+
+    toggleFavorite(id) {
+        const snippet = this.snippets.find(s => s.id === id);
+        if (snippet) {
+            snippet.favorite = !snippet.favorite;
+            this.saveSnippets();
+            this.renderSnippets();
+            
+            const action = snippet.favorite ? 'added to' : 'removed from';
+            this.showToast(`Snippet ${action} favorites!`);
+        }
     }
 
     toggleTag(tagElement) {
