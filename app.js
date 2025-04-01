@@ -28,6 +28,7 @@ class SnippetManager {
 
     attachEventListeners() {
         document.getElementById('newSnippetBtn').addEventListener('click', () => this.openModal());
+        document.getElementById('statsBtn').addEventListener('click', () => this.showStats());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportSnippets());
         document.getElementById('importBtn').addEventListener('click', () => this.importSnippets());
         document.getElementById('importFile').addEventListener('change', (e) => this.handleFileImport(e));
@@ -458,6 +459,121 @@ ${snippet.code}`;
         URL.revokeObjectURL(url);
 
         this.showToast('Snippet exported as ' + filename);
+    }
+
+    showStats() {
+        const stats = this.calculateStats();
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close" onclick="document.body.removeChild(this.closest('.modal'))">&times;</span>
+                <h2>📊 Snippet Statistics</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.total}</div>
+                        <div class="stat-label">Total Snippets</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.favorites}</div>
+                        <div class="stat-label">Favorites</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.languages}</div>
+                        <div class="stat-label">Languages</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.categories}</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Languages Breakdown</h3>
+                    <div class="language-stats">
+                        ${Object.entries(stats.languageBreakdown)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([lang, count]) => `
+                                <div class="language-bar">
+                                    <span class="language-name">${lang}</span>
+                                    <div class="bar-container">
+                                        <div class="bar" style="width: ${(count / stats.total) * 100}%"></div>
+                                        <span class="count">${count}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>Recent Activity</h3>
+                    <div class="recent-snippets">
+                        ${stats.recentSnippets.map(snippet => `
+                            <div class="recent-item">
+                                <strong>${this.escapeHtml(snippet.title)}</strong>
+                                <small>${new Date(snippet.createdAt).toLocaleDateString()}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="document.body.removeChild(this.closest('.modal'))" class="btn primary">Close</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    calculateStats() {
+        const languageBreakdown = {};
+        const categoryBreakdown = {};
+        let favorites = 0;
+        
+        this.snippets.forEach(snippet => {
+            // Count languages
+            if (languageBreakdown[snippet.language]) {
+                languageBreakdown[snippet.language]++;
+            } else {
+                languageBreakdown[snippet.language] = 1;
+            }
+            
+            // Count categories
+            if (snippet.category) {
+                if (categoryBreakdown[snippet.category]) {
+                    categoryBreakdown[snippet.category]++;
+                } else {
+                    categoryBreakdown[snippet.category] = 1;
+                }
+            }
+            
+            // Count favorites
+            if (snippet.favorite) {
+                favorites++;
+            }
+        });
+
+        const recentSnippets = this.snippets
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 5);
+
+        return {
+            total: this.snippets.length,
+            favorites,
+            languages: Object.keys(languageBreakdown).length,
+            categories: Object.keys(categoryBreakdown).length,
+            languageBreakdown,
+            categoryBreakdown,
+            recentSnippets
+        };
     }
 
     showToast(message) {
