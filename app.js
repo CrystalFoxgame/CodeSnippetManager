@@ -2,6 +2,7 @@ class SnippetManager {
     constructor() {
         this.snippets = this.loadSnippets();
         this.currentEditId = null;
+        this.previewMode = false;
         this.initializeElements();
         this.attachEventListeners();
         this.setupKeyboardShortcuts();
@@ -29,6 +30,7 @@ class SnippetManager {
     attachEventListeners() {
         document.getElementById('newSnippetBtn').addEventListener('click', () => this.openModal());
         document.getElementById('statsBtn').addEventListener('click', () => this.showStats());
+        document.getElementById('previewModeBtn').addEventListener('click', () => this.togglePreviewMode());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportSnippets());
         document.getElementById('importBtn').addEventListener('click', () => this.importSnippets());
         document.getElementById('importFile').addEventListener('change', (e) => this.handleFileImport(e));
@@ -692,35 +694,67 @@ ${snippet.code}`;
             return;
         }
 
-        this.snippetsGrid.innerHTML = snippetsToRender.map(snippet => `
-            <div class="snippet-card">
-                <div class="snippet-header">
-                    <div>
-                        <div class="snippet-title">${this.escapeHtml(snippet.title)}</div>
-                        <div class="snippet-meta">
-                            <span class="snippet-language">${snippet.language}</span>
-                            ${snippet.category ? `<span class="snippet-category">${this.escapeHtml(snippet.category)}</span>` : ''}
+        this.snippetsGrid.innerHTML = snippetsToRender.map(snippet => {
+            if (this.previewMode) {
+                return `
+                    <div class="snippet-card preview-mode" onclick="app.showQuickPreview(${snippet.id})">
+                        <div class="snippet-header">
+                            <div>
+                                <div class="snippet-title">${this.escapeHtml(snippet.title)}</div>
+                                <div class="snippet-meta">
+                                    <span class="snippet-language">${snippet.language}</span>
+                                    ${snippet.category ? `<span class="snippet-category">${this.escapeHtml(snippet.category)}</span>` : ''}
+                                </div>
+                            </div>
+                            <button class="favorite-btn ${snippet.favorite ? 'active' : ''}" onclick="event.stopPropagation(); app.toggleFavorite(${snippet.id})" title="${snippet.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                ${snippet.favorite ? '⭐' : '☆'}
+                            </button>
+                        </div>
+                        ${snippet.description ? `<div class="snippet-description">${this.escapeHtml(snippet.description)}</div>` : ''}
+                        <div class="snippet-code-preview">
+                            ${this.escapeHtml(snippet.code.slice(0, 150))}${snippet.code.length > 150 ? '...' : ''}
+                        </div>
+                        ${snippet.tags.length > 0 ? `
+                            <div class="snippet-tags">
+                                ${snippet.tags.slice(0, 3).map(tag => `<span class="snippet-tag">${this.escapeHtml(tag)}</span>`).join('')}
+                                ${snippet.tags.length > 3 ? `<span class="snippet-tag">+${snippet.tags.length - 3}</span>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="preview-overlay">Click to view full snippet</div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="snippet-card">
+                        <div class="snippet-header">
+                            <div>
+                                <div class="snippet-title">${this.escapeHtml(snippet.title)}</div>
+                                <div class="snippet-meta">
+                                    <span class="snippet-language">${snippet.language}</span>
+                                    ${snippet.category ? `<span class="snippet-category">${this.escapeHtml(snippet.category)}</span>` : ''}
+                                </div>
+                            </div>
+                            <button class="favorite-btn ${snippet.favorite ? 'active' : ''}" onclick="app.toggleFavorite(${snippet.id})" title="${snippet.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                ${snippet.favorite ? '⭐' : '☆'}
+                            </button>
+                        </div>
+                        ${snippet.description ? `<div class="snippet-description">${this.escapeHtml(snippet.description)}</div>` : ''}
+                        <div class="snippet-code"><pre><code class="language-${snippet.language}">${this.escapeHtml(snippet.code)}</code></pre></div>
+                        ${snippet.tags.length > 0 ? `
+                            <div class="snippet-tags">
+                                ${snippet.tags.map(tag => `<span class="snippet-tag">${this.escapeHtml(tag)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="snippet-actions">
+                            <button class="snippet-btn copy-btn" onclick="app.copyToClipboard(\`${this.escapeJs(snippet.code)}\`)">Copy</button>
+                            <button class="snippet-btn export-btn" onclick="app.exportSingleSnippet(${snippet.id})">Export</button>
+                            <button class="snippet-btn edit-btn" onclick="app.openModal(${JSON.stringify(snippet).replace(/"/g, '&quot;')})">Edit</button>
+                            <button class="snippet-btn delete-btn" onclick="app.deleteSnippet(${snippet.id})">Delete</button>
                         </div>
                     </div>
-                    <button class="favorite-btn ${snippet.favorite ? 'active' : ''}" onclick="app.toggleFavorite(${snippet.id})" title="${snippet.favorite ? 'Remove from favorites' : 'Add to favorites'}">
-                        ${snippet.favorite ? '⭐' : '☆'}
-                    </button>
-                </div>
-                ${snippet.description ? `<div class="snippet-description">${this.escapeHtml(snippet.description)}</div>` : ''}
-                <div class="snippet-code"><pre><code class="language-${snippet.language}">${this.escapeHtml(snippet.code)}</code></pre></div>
-                ${snippet.tags.length > 0 ? `
-                    <div class="snippet-tags">
-                        ${snippet.tags.map(tag => `<span class="snippet-tag">${this.escapeHtml(tag)}</span>`).join('')}
-                    </div>
-                ` : ''}
-                <div class="snippet-actions">
-                    <button class="snippet-btn copy-btn" onclick="app.copyToClipboard(\`${this.escapeJs(snippet.code)}\`)">Copy</button>
-                    <button class="snippet-btn export-btn" onclick="app.exportSingleSnippet(${snippet.id})">Export</button>
-                    <button class="snippet-btn edit-btn" onclick="app.openModal(${JSON.stringify(snippet).replace(/"/g, '&quot;')})">Edit</button>
-                    <button class="snippet-btn delete-btn" onclick="app.deleteSnippet(${snippet.id})">Delete</button>
-                </div>
-            </div>
-        `).join('');
+                `;
+            }
+        }).join('');
         
         // Apply syntax highlighting
         if (window.Prism) {
@@ -906,6 +940,85 @@ ${snippet.code}`;
             const action = snippet.favorite ? 'added to' : 'removed from';
             this.showToast(`Snippet ${action} favorites!`);
         }
+    }
+
+    togglePreviewMode() {
+        this.previewMode = !this.previewMode;
+        const btn = document.getElementById('previewModeBtn');
+        
+        if (this.previewMode) {
+            btn.textContent = '📋 Normal';
+            btn.title = 'Switch to normal view';
+            document.body.classList.add('preview-mode');
+        } else {
+            btn.textContent = '👁️ Preview';
+            btn.title = 'Switch to preview mode';
+            document.body.classList.remove('preview-mode');
+        }
+        
+        this.renderSnippets();
+        this.showToast(`Switched to ${this.previewMode ? 'preview' : 'normal'} mode`);
+    }
+
+    showQuickPreview(id) {
+        const snippet = this.snippets.find(s => s.id === id);
+        if (!snippet) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal quick-preview';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content quick-preview-content">
+                <div class="quick-preview-header">
+                    <div>
+                        <h2>${this.escapeHtml(snippet.title)}</h2>
+                        <div class="snippet-meta">
+                            <span class="snippet-language">${snippet.language}</span>
+                            ${snippet.category ? `<span class="snippet-category">${this.escapeHtml(snippet.category)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="quick-preview-actions">
+                        <button class="favorite-btn ${snippet.favorite ? 'active' : ''}" onclick="app.toggleFavorite(${snippet.id}); document.body.removeChild(this.closest('.modal')); app.renderSnippets();" title="${snippet.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+                            ${snippet.favorite ? '⭐' : '☆'}
+                        </button>
+                        <button class="close-btn" onclick="document.body.removeChild(this.closest('.modal'))">&times;</button>
+                    </div>
+                </div>
+                
+                ${snippet.description ? `<div class="snippet-description">${this.escapeHtml(snippet.description)}</div>` : ''}
+                
+                <div class="snippet-code full-preview">
+                    <pre><code class="language-${snippet.language}">${this.escapeHtml(snippet.code)}</code></pre>
+                </div>
+                
+                ${snippet.tags.length > 0 ? `
+                    <div class="snippet-tags">
+                        ${snippet.tags.map(tag => `<span class="snippet-tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                ` : ''}
+                
+                <div class="quick-preview-buttons">
+                    <button class="btn" onclick="app.copyToClipboard(\`${this.escapeJs(snippet.code)}\`)">Copy</button>
+                    <button class="btn" onclick="app.exportSingleSnippet(${snippet.id})">Export</button>
+                    <button class="btn" onclick="document.body.removeChild(this.closest('.modal')); app.openModal(${JSON.stringify(snippet).replace(/"/g, '&quot;')})">Edit</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        
+        // Apply syntax highlighting
+        if (window.Prism) {
+            window.Prism.highlightElement(modal.querySelector('code'));
+        }
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
     }
 
     toggleTag(tagElement) {

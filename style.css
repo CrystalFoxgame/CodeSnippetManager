@@ -540,6 +540,111 @@ h1 {
     font-size: 0.8rem;
 }
 
+/* Preview Mode Styles */
+.snippet-card.preview-mode {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.snippet-card.preview-mode:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.snippet-code-preview {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    color: #2f3542;
+    border-left: 3px solid #3742fa;
+    max-height: 80px;
+    overflow: hidden;
+}
+
+.preview-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(255,255,255,0.9));
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.snippet-card.preview-mode:hover .preview-overlay {
+    opacity: 1;
+}
+
+.body.preview-mode .snippets-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+/* Quick Preview Modal */
+.modal.quick-preview {
+    z-index: 2000;
+}
+
+.quick-preview-content {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.quick-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.quick-preview-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.snippet-code.full-preview {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.quick-preview-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 5px;
